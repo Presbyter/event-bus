@@ -45,7 +45,7 @@ func (b *bus) Send(event *transport.SendPayload) error {
 
 		if !success {
 			// 记录日志
-			_, _ = fmt.Fprintf(b.cfg.Log, "[WARN] event-bus publish message failed. error: %s", err)
+			_, _ = fmt.Fprintf(b.cfg.Log, "[WARN] event-bus publish message failed. error: %s, event:%#v", err, *event)
 		}
 	}()
 
