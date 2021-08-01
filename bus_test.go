@@ -22,7 +22,7 @@ func TestAll(t *testing.T) {
 
 		cfg := DefaultBusConfig
 		{
-			cfg.AppName = "EventBusTesting"
+			cfg.BusName = "EventBusTesting"
 			cfg.Transport = natsTrans.NewNatsTransport(natsDsn...)
 			cfg.SubscribeQueue = "0e53731b-acc7-4dd3-a40d-bcb7098cd90e"
 			cfg.SubscribeFunc = func(rec *transport.Payload) {

@@ -23,10 +23,10 @@ func (b *bus) RegisterTransport(trans transport.AbstractTransport) *bus {
 }
 
 func (b *bus) Send(event *transport.Payload) error {
-	event.Head.From = b.cfg.AppName
+	event.Head.From = b.cfg.BusName
 
 	var err error
-	topic := fmt.Sprintf("event-bus.%s.%s", b.cfg.AppName, event.Action)
+	topic := fmt.Sprintf("event-bus.%s.%s", b.cfg.BusName, event.Action)
 	if err = b.cfg.Transport.Publish(topic, event); err != nil {
 		_, _ = fmt.Fprintf(b.cfg.Log, "event-bus publish message failed. error: %s", err)
 	}
@@ -57,7 +57,7 @@ func (b *bus) Send(event *transport.Payload) error {
 }
 
 func (b *bus) Receive() error {
-	topic := fmt.Sprintf("event-bus.%s.>", b.cfg.AppName)
+	topic := fmt.Sprintf("event-bus.%s.>", b.cfg.BusName)
 	queue := b.cfg.SubscribeQueue
 	recCh, err := b.cfg.Transport.Subscribe(topic, queue)
 	if err != nil {
@@ -77,7 +77,7 @@ func (b *bus) Receive() error {
 }
 
 type BusConfig struct {
-	AppName        string
+	BusName        string
 	SubscribeQueue string
 	SendRetryTimes int
 	Transport      transport.AbstractTransport
@@ -88,7 +88,7 @@ type BusConfig struct {
 type SubscribeFunc func(rec *transport.Payload)
 
 var DefaultBusConfig = BusConfig{
-	AppName:        "Default",
+	BusName:        "Default",
 	SubscribeQueue: "", // 使用uuid为了保证唯一性,独立的queue具有负载均衡效果
 	SendRetryTimes: 0,
 	Transport:      natsTrans.NewNatsTransport(nats.DefaultURL),
