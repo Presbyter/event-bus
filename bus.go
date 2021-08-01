@@ -89,7 +89,7 @@ type SubscribeFunc func(rec *transport.Payload)
 
 var DefaultBusConfig = BusConfig{
 	AppName:        "Default",
-	SubscribeQueue: "2e71ad7b-7371-43fc-bc9a-6b69bc7c4bfb", // 使用uuid为了保证唯一性,独立的queue具有负载均衡效果
+	SubscribeQueue: "", // 使用uuid为了保证唯一性,独立的queue具有负载均衡效果
 	SendRetryTimes: 0,
 	Transport:      natsTrans.NewNatsTransport(nats.DefaultURL),
 	SubscribeFunc: func(rec *transport.Payload) {
