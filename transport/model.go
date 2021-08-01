@@ -8,13 +8,7 @@ type Head struct {
 	CreateAt time.Time `json:"create_at"`
 }
 
-type SendPayload struct {
+type Payload struct {
 	Head
 	Data interface{} `json:"data"`
-}
-
-type ReceivePayload struct {
-	Head
-	ReceiveAt time.Time   `json:"receive_at"`
-	Data      interface{} `json:"data"`
 }

@@ -2,11 +2,13 @@ package event_bus
 
 import (
 	"fmt"
-	"github.com/Presbyter/evnet-bus/transport"
-	"github.com/Presbyter/evnet-bus/transport/nats"
 	"io"
 	"os"
 	"time"
+
+	"github.com/Presbyter/evnet-bus/transport"
+	natsTrans "github.com/Presbyter/evnet-bus/transport/nats"
+	"github.com/nats-io/nats.go"
 )
 
 type bus struct {
@@ -20,9 +22,11 @@ func (b *bus) RegisterTransport(trans transport.AbstractTransport) *bus {
 	return b
 }
 
-func (b *bus) Send(event *transport.SendPayload) error {
+func (b *bus) Send(event *transport.Payload) error {
+	event.Head.From = b.cfg.AppName
+
 	var err error
-	topic := fmt.Sprintf("event-bus/%s/%s", b.cfg.AppName, event.Action)
+	topic := fmt.Sprintf("event-bus.%s.%s", b.cfg.AppName, event.Action)
 	if err = b.cfg.Transport.Publish(topic, event); err != nil {
 		_, _ = fmt.Fprintf(b.cfg.Log, "event-bus publish message failed. error: %s", err)
 	}
@@ -53,16 +57,21 @@ func (b *bus) Send(event *transport.SendPayload) error {
 }
 
 func (b *bus) Receive() error {
-	topic := fmt.Sprintf("event-bus/%s/*", b.cfg.AppName)
-	rec, err := b.cfg.Transport.Subscribe(topic, b.cfg.SubscribeQueue)
+	topic := fmt.Sprintf("event-bus.%s.>", b.cfg.AppName)
+	queue := b.cfg.SubscribeQueue
+	recCh, err := b.cfg.Transport.Subscribe(topic, queue)
 	if err != nil {
 		return err
 	}
 
-	foo := b.cfg.SubscribeFunc
-	if foo != nil {
-		return foo(rec)
-	}
+	go func() {
+		for rec := range recCh {
+			foo := b.cfg.SubscribeFunc
+			if foo != nil {
+				foo(rec)
+			}
+		}
+	}()
 
 	return nil
 }
@@ -76,16 +85,15 @@ type BusConfig struct {
 	Log            io.Writer
 }
 
-type SubscribeFunc func(rec *transport.ReceivePayload) error
+type SubscribeFunc func(rec *transport.Payload)
 
 var DefaultBusConfig = BusConfig{
 	AppName:        "Default",
 	SubscribeQueue: "2e71ad7b-7371-43fc-bc9a-6b69bc7c4bfb", // 使用uuid为了保证唯一性,独立的queue具有负载均衡效果
 	SendRetryTimes: 0,
-	Transport:      &nats.NatsTrasport{},
-	SubscribeFunc: func(rec *transport.ReceivePayload) error {
-		_, _ = fmt.Fprintf(os.Stdout, "recevie message: %v", rec)
-		return nil
+	Transport:      natsTrans.NewNatsTransport(nats.DefaultURL),
+	SubscribeFunc: func(rec *transport.Payload) {
+		_, _ = fmt.Fprintf(os.Stdout, "recevie message: %#v", *rec)
 	},
 	Log: os.Stdout,
 }
